@@ -44,6 +44,7 @@ public class BasicFlow {
     private    	long   startActiveTime;
     private    	long   endActiveTime;
     private    	String flowId = null;
+    private 	Byte[] byteCounts;
     
     private     SummaryStatistics flowIAT = null;
     private     SummaryStatistics forwardIAT = null;
@@ -110,7 +111,11 @@ public class BasicFlow {
 		this.bURG_cnt=0;
 		this.fHeaderBytes=0L;
 		this.bHeaderBytes=0L;
-
+		this.byteCounts = new Byte[256];
+		for (int i = 0; i < 256L; i++)
+		{
+			byteCounts[i]=0;
+		}
 	}
 	
 	
@@ -171,6 +176,11 @@ public class BasicFlow {
 		detectUpdateSubflows(packet);
 		checkFlags(packet);
     	long currentTimestamp = packet.getTimeStamp();
+    	long payloadLength = packet.getPayloadBytes();
+		byte[] payload = packet.getPayloadData();
+    	for(int i=0;i<payloadLength;i++){
+			this.byteCounts[payload[i]]++;
+		}
     	if(isBidirectional){
 			this.flowLengthStats.addValue((double)packet.getPayloadBytes());
 
@@ -708,6 +718,9 @@ public class BasicFlow {
     	}else{
     		dump+="0,0,0,0";
     	}
+    	for(int i=0;i<256;i++){
+			dump+=","+this.byteCounts[i];
+		}
 		dump+=","+ getLabel();
 
 		/*if(FormatUtils.ip(src).equals("147.32.84.165") | FormatUtils.ip(dst).equals("147.32.84.165")){
@@ -1232,7 +1245,9 @@ public class BasicFlow {
     		dump.append(0).append(separator);
     		dump.append(0).append(separator);
     	}
-
+		for(int i=0;i<256;i++){
+			dump.append(this.byteCounts[i]).append(separator);
+		}
         dump.append(getLabel());
 
     	

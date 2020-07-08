@@ -15,8 +15,9 @@ public class BasicPacketInfo {
     private    int protocol;
     private    long   timeStamp;
     private    long   payloadBytes;
-    private    String  flowId = null;  
-/* ******************************************** */    
+    private    String  flowId = null;
+/* ******************************************** */
+	private    byte[] payloadData;
     private    boolean flagFIN = false;
 	private    boolean flagPSH = false;
 	private    boolean flagURG = false;
@@ -79,7 +80,12 @@ public class BasicPacketInfo {
 		return this.flowId;
 	}
 
-
+	public byte[] getPayloadData() {
+		return Arrays.copyOf(payloadData,payloadData.length);
+	}
+	public void setPayloadData(byte[] payloadData) {
+		this.payloadData = payloadData;
+	}
     
 	public String dumpInfo() {
 		return null;

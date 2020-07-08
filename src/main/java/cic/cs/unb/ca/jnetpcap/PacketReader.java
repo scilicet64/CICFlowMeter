@@ -41,14 +41,14 @@ public class PacketReader {
 	public PacketReader(String filename) {
 		super();	
 		this.readIP4 = true;
-		this.readIP6 = false;		
+		this.readIP6 = true;		
 		this.config(filename);
 	}
 	
 	public PacketReader(String filename, boolean readip4, boolean readip6) {
 		super();	
-		this.readIP4 = readip4;
-		this.readIP6 = readip6;
+		this.readIP4 = true;
+		this.readIP6 = true;
 		this.config(filename);
 	}	
 	
@@ -139,11 +139,13 @@ public class PacketReader {
 					packetInfo.setFlagCWR(tcp.flags_CWR());
 					packetInfo.setFlagRST(tcp.flags_RST());
 					packetInfo.setPayloadBytes(tcp.getPayloadLength());
+					packetInfo.setPayloadData(tcp.getPayload());
 					packetInfo.setHeaderBytes(tcp.getHeaderLength());
 				}else if(packet.hasHeader(this.udp)){
 					packetInfo.setSrcPort(udp.source());
 					packetInfo.setDstPort(udp.destination());
 					packetInfo.setPayloadBytes(udp.getPayloadLength());
+					packetInfo.setPayloadData(udp.getPayload());
 					packetInfo.setHeaderBytes(udp.getHeaderLength());
 					packetInfo.setProtocol(17);			
 				}else {
@@ -194,13 +196,15 @@ public class PacketReader {
 					packetInfo.setSrcPort(tcp.source());
 					packetInfo.setDstPort(tcp.destination());
 					packetInfo.setPayloadBytes(tcp.getPayloadLength());
+					packetInfo.setPayloadData(tcp.getPayload());
 					packetInfo.setHeaderBytes(tcp.getHeaderLength());
 					packetInfo.setProtocol(6);
 				}else if(packet.hasHeader(this.udp)){
 					packetInfo.setSrcPort(udp.source());
 					packetInfo.setDstPort(udp.destination());
 					packetInfo.setPayloadBytes(udp.getPayloadLength());
-					packetInfo.setHeaderBytes(tcp.getHeaderLength());
+					packetInfo.setPayloadData(udp.getPayload());
+					packetInfo.setHeaderBytes(udp.getHeaderLength());
 					packetInfo.setProtocol(17);								
 				}		
 			}
@@ -364,12 +368,14 @@ public class PacketReader {
 					packetInfo.setSrcPort(protocol.getTcp().source());
 					packetInfo.setDstPort(protocol.getTcp().destination());
 					packetInfo.setPayloadBytes(protocol.getTcp().getPayloadLength());
+					packetInfo.setPayloadData(protocol.getTcp().getPayload());
 					packetInfo.setHeaderBytes(protocol.getTcp().getHeaderLength());
 					packetInfo.setProtocol(6);
 				}else if(packet.hasHeader(protocol.getUdp())){
 					packetInfo.setSrcPort(protocol.getUdp().source());
 					packetInfo.setDstPort(protocol.getUdp().destination());
 					packetInfo.setPayloadBytes(protocol.getUdp().getPayloadLength());
+					packetInfo.setPayloadData(protocol.getUdp().getPayload());
 					packetInfo.setHeaderBytes(protocol.getUdp().getHeaderLength());
 					packetInfo.setProtocol(17);								
 				}		
@@ -423,11 +429,13 @@ public class PacketReader {
 					packetInfo.setFlagCWR(protocol.getTcp().flags_CWR());
 					packetInfo.setFlagRST(protocol.getTcp().flags_RST());
 					packetInfo.setPayloadBytes(protocol.getTcp().getPayloadLength());
+					packetInfo.setPayloadData(protocol.getTcp().getPayload());
 					packetInfo.setHeaderBytes(protocol.getTcp().getHeaderLength());
 				}else if(packet.hasHeader(protocol.getUdp())){
 					packetInfo.setSrcPort(protocol.getUdp().source());
 					packetInfo.setDstPort(protocol.getUdp().destination());
 					packetInfo.setPayloadBytes(protocol.getUdp().getPayloadLength());
+					packetInfo.setPayloadData(protocol.getUdp().getPayload());
 					packetInfo.setHeaderBytes(protocol.getUdp().getHeaderLength());
 					packetInfo.setProtocol(17);			
 				} else {

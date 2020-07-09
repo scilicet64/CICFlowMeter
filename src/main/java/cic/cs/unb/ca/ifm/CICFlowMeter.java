@@ -81,12 +81,14 @@ public class CICFlowMeter {
 					basicPacket = packetReader.nextPacket();					
 					nTotal++;					
 					if(basicPacket!=null){
+						System.out.println("addPacket");
 						flowGen.addPacket(basicPacket);
 						nValid++;
 					}else{
 						nDiscarded++;
 					}
 				}catch(PcapClosedException e){
+					System.out.println("PcapClosedException on: " + e);
 					break;
 				}
 			}		

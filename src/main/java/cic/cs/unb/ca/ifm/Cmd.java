@@ -127,7 +127,7 @@ public class Cmd {
         boolean readIP4 = true;
         PacketReader packetReader = new PacketReader(inputFile, readIP4, readIP6);
 
-        System.out.println(String.format("Working on... %s",fileName));
+        System.out.println(String.format("readPcapFile Working on... %s",fileName));
 
         int nValid=0;
         int nTotal=0;
@@ -135,6 +135,7 @@ public class Cmd {
         long start = System.currentTimeMillis();
         int i=0;
         while(true) {
+
             /*i = (i)%animationChars.length;
             System.out.print("Working on "+ inputFile+" "+ animationChars[i] +"\r");*/
             try{
@@ -147,6 +148,7 @@ public class Cmd {
                     nDiscarded++;
                 }
             }catch(PcapClosedException e){
+                System.out.print("PcapClosedException on "+ e +"\n ");
                 break;
             }
             i++;

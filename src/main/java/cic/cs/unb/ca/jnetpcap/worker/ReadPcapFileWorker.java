@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static cic.cs.unb.ca.jnetpcap.Utils.*;
 
@@ -29,30 +29,39 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
     
     private File pcapPath;
     private String outPutDirectory;
+    private String LabelDirectory;
     private List<String> chunks;
 
-    public ReadPcapFileWorker(File inputFile, String outPutDir) {
+    public ReadPcapFileWorker(File inputFile, String outPutDir, String labelDir) {
         super();
         pcapPath = inputFile;
         outPutDirectory = outPutDir;
+        LabelDirectory = labelDir;
         chunks = new ArrayList<>();
 
         if(!outPutDirectory.endsWith(FILE_SEP)) {
             outPutDirectory = outPutDirectory + FILE_SEP;
         }
+
+        if(!LabelDirectory.endsWith(FILE_SEP)) {
+            LabelDirectory = LabelDirectory + FILE_SEP;
+        }
+
         flowTimeout = 120000000L;
         activityTimeout = 5000000L;
     }
 
-    public ReadPcapFileWorker(File inputFile, String outPutDir,long param1,long param2) {
+    public ReadPcapFileWorker(File inputFile, String outPutDir, String labelDir, long param1,long param2) {
         super();
         pcapPath = inputFile;
         outPutDirectory = outPutDir;
+        LabelDirectory = labelDir;
         chunks = new ArrayList<>();
 
         if(!outPutDirectory.endsWith(FILE_SEP)) {
             outPutDirectory = outPutDirectory + FILE_SEP;
         }
+
         flowTimeout = param1;
         activityTimeout = param2;
     }
@@ -129,7 +138,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         if(inputFile==null ||outPath==null ) {
             return;
         }
-
+        Dictionary labels = new Hashtable();
         Path p = Paths.get(inputFile);
         String fileName = p.getFileName().toString();//FilenameUtils.getName(inputFile);
 
@@ -138,7 +147,17 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
             outPath += FILE_SEP;
         }
 
+        if(!outPath.endsWith(FILE_SEP)){
+            outPath += FILE_SEP;
+        }
+
+        if(!this.LabelDirectory.endsWith(FILE_SEP)) {
+            this.LabelDirectory += FILE_SEP;
+        }
+
         File saveFileFullPath = new File(outPath+fileName+Utils.FLOW_SUFFIX);
+
+        File labelFileFullPath = new File(this.LabelDirectory+fileName+Utils.FLOW_SUFFIX);
 
         if (saveFileFullPath.exists()) {
             if (!saveFileFullPath.delete()) {
@@ -146,9 +165,31 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
             }
         }
 
+        if (!labelFileFullPath.exists()) {
+                System.out.println("Optional Label file not found");
+        }else{
+
+            try (Scanner scanner = new Scanner(labelFileFullPath);) {
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    List<String> values = new ArrayList<String>();
+                    try (Scanner rowScanner = new Scanner(line)) {
+                        rowScanner.useDelimiter(",");
+                        while (rowScanner.hasNext()) {
+                            values.add(rowScanner.next());
+                        }
+                    }
+                    List<String> results = new ArrayList<String>();
+                    labels.put(values.get(0),values.get(values.size()-1));
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
 
         FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
         flowGen.addFlowListener(new FlowListener(fileName));
+        flowGen.addLabels(labels);
         boolean readIP6 = false;
         boolean readIP4 = true;
         PacketReader packetReader = new PacketReader(inputFile, readIP4, readIP6);

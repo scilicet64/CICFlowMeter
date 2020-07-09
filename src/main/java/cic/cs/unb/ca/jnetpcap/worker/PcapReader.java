@@ -43,7 +43,7 @@ public class PcapReader {
         boolean readIP4 = true;
         PacketReader packetReader = new PacketReader(inputFile, readIP4, readIP6);
 
-        System.out.println(String.format("Working on... %s",fileName));
+        System.out.println(String.format("readFile Working on... %s",fileName));
 
         int nValid=0;
         int nTotal=0;

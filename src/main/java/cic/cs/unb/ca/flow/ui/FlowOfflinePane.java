@@ -14,10 +14,8 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.io.File;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,8 +27,10 @@ public class FlowOfflinePane extends JPanel{
     private JTextArea textArea;
     private JButton btnClr;
     private JComboBox<File> cmbInput;
+    private JComboBox<File> cmbInput2;
     private JComboBox<File> cmbOutput;
     private Vector<File> cmbInputEle;
+    private Vector<File> cmbInputEle2;
     private Vector<File> cmbOutputEle;
 
     private JComboBox<Long> param1;
@@ -76,6 +76,8 @@ public class FlowOfflinePane extends JPanel{
         textArea.setToolTipText("message");
         scrollPane.setViewportView(textArea);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0x555555)));
+
+
 
         /*JPanel msgSettingPane = new JPanel();
         msgSettingPane.setLayout(new BoxLayout(msgSettingPane, BoxLayout.X_AXIS));
@@ -165,6 +167,24 @@ public class FlowOfflinePane extends JPanel{
             }
         });
 
+
+        JLabel lblInput2Dir = new JLabel("Label dir:");
+        JButton btnInput2Browse = new JButton("Browse");
+        cmbInputEle2 = new Vector<>();
+        cmbInput2 = new JComboBox<>(cmbInputEle2);
+        cmbInput2.setEditable(true);
+        btnInput2Browse.addActionListener(actionEvent -> {
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            fileChooser.removeChoosableFileFilter(pcapChooserFilter);
+            int action = fileChooser.showOpenDialog(FlowOfflinePane.this);
+            if (action == JFileChooser.APPROVE_OPTION) {
+                File inputFile = fileChooser.getSelectedFile();
+                logger.debug("offline select labels {}", inputFile.getPath());
+                setComboBox(cmbInput2, cmbInputEle2, inputFile);
+            }
+        });
+
+
         JLabel lblOutputDir = new JLabel("Output dir:");
         JButton btnOutputBrowse = new JButton("Browse");
         cmbOutputEle = new Vector<>();
@@ -236,6 +256,34 @@ public class FlowOfflinePane extends JPanel{
         //gc.insets = new Insets(10, 5, 10, 0);
         jPanel.add(btnOutputBrowse, gc);
 
+
+        //third row
+        gc.gridx = 0;
+        gc.gridy = 2;
+        gc.weightx = 0;
+        gc.weighty = 0.1;
+        gc.fill = GridBagConstraints.NONE;
+        gc.anchor = GridBagConstraints.LINE_END;
+        //gc.insets = new Insets(10, 5, 10, 5);
+        jPanel.add(lblInput2Dir, gc);
+
+        gc.gridx = 1;
+        gc.gridy = 2;
+        gc.weightx = 1;
+        gc.weighty = 0.1;
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.anchor = GridBagConstraints.LINE_START;
+        //gc.insets = new Insets(0, 10, 0, 0);
+        gc.insets.left = gc.insets.right = 10;
+        jPanel.add(cmbInput2, gc);
+
+        gc.gridx = 2;
+        gc.gridy = 2;
+        gc.weightx = 0;
+        gc.fill = GridBagConstraints.NONE;
+        gc.anchor = GridBagConstraints.LINE_END;
+        //gc.insets = new Insets(10, 5, 10, 0);
+        jPanel.add(btnInput2Browse, gc);
 
         return jPanel;
     }
@@ -331,6 +379,14 @@ public class FlowOfflinePane extends JPanel{
             in = cmbInputEle.get(cmbInIndex);
         }
 
+        final File in2;
+        int cmbInIndex2 = cmbInput2.getSelectedIndex();
+        if (cmbInIndex2 < 0) {
+            in2 = new File((String) cmbInput2.getEditor().getItem());
+        }else{
+            in2 = cmbInputEle2.get(cmbInIndex2);
+        }
+
         final File out;
         int cmbOutIndex = cmbOutput.getSelectedIndex();
         if (cmbOutIndex < 0) {
@@ -341,6 +397,7 @@ public class FlowOfflinePane extends JPanel{
 
         updateOut("You select: " + in.toString());
         updateOut("Out folder: " + out.toString());
+        updateOut("Label select: " + in2.toString());
         updateOut("-------------------------------");
 
         long flowTimeout;
@@ -351,7 +408,7 @@ public class FlowOfflinePane extends JPanel{
 
             Map<String, Long> flowCnt = new HashMap<>();
 
-            ReadPcapFileWorker worker = new ReadPcapFileWorker(in, out.getPath(), flowTimeout, activityTimeout);
+            ReadPcapFileWorker worker = new ReadPcapFileWorker(in, out.getPath(),in2.getPath(), flowTimeout, activityTimeout);
             worker.addPropertyChangeListener(evt -> {
                 ReadPcapFileWorker task = (ReadPcapFileWorker) evt.getSource();
                 if ("progress".equals(evt.getPropertyName())) {

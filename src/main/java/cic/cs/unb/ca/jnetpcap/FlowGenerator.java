@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 import static cic.cs.unb.ca.jnetpcap.Utils.LINE_SEP;
 
@@ -47,8 +45,9 @@ public class FlowGenerator {
 	private long    flowTimeOut;
 	private long    flowActivityTimeOut;
 	private int     finishedFlowCount;
-	
-	public FlowGenerator(boolean bidirectional, long flowTimeout, long activityTimeout) {
+    private Dictionary<String, String> labels;
+
+    public FlowGenerator(boolean bidirectional, long flowTimeout, long activityTimeout) {
 		super();
 		this.bidirectional = bidirectional;
 		this.flowTimeOut = flowTimeout;
@@ -98,8 +97,9 @@ public class FlowGenerator {
                                             }
                     //flow.endActiveIdleTime(currentTimestamp,this.flowActivityTimeOut, this.flowTimeOut, false);
     			}
+    			String label = labels.get(id);
     			currentFlows.remove(id);    			
-				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut));
+				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut,label));
     			
     			int cfsize = currentFlows.size();
     			if(cfsize%50==0) {
@@ -126,7 +126,8 @@ public class FlowGenerator {
     			currentFlows.put(id,flow);
     		}
     	}else{
-			currentFlows.put(packet.fwdFlowId(), new BasicFlow(bidirectional,packet, this.flowActivityTimeOut));
+            String label = labels.get(packet.fwdFlowId());
+			currentFlows.put(packet.fwdFlowId(), new BasicFlow(bidirectional,packet, this.flowActivityTimeOut,label));
     	}
     }
 
@@ -251,5 +252,9 @@ public class FlowGenerator {
     private int getFlowCount(){
     	this.finishedFlowCount++;
     	return this.finishedFlowCount;
+    }
+
+    public void addLabels(Dictionary<String, String> labels) {
+        this.labels = labels;
     }
 }

@@ -57,9 +57,11 @@ public class BasicFlow {
     private     long   forwardLastSeen;
     private     long   backwardLastSeen;
     private     long   activityTimeout;
+    private 	String label;
 
-	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, byte[] flowSrc, byte[] flowDst, int flowSrcPort, int flowDstPort, long activityTimeout) {
+	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, byte[] flowSrc, byte[] flowDst, int flowSrcPort, int flowDstPort, long activityTimeout, String label) {
 		super();
+		this.label=label;
 		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = isBidirectional;
@@ -68,21 +70,23 @@ public class BasicFlow {
 		this.dst = flowDst;
 		this.srcPort = flowSrcPort;
 		this.dstPort = flowDstPort;
-	}    
-    
-	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, long activityTimeout) {
+	}
+
+	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, long activityTimeout, String label) {
 		super();
+		this.label=label;
 		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = isBidirectional;
 		this.firstPacket(packet);
 	}
 
-	public BasicFlow(BasicPacketInfo packet, long activityTimeout) {
+	public BasicFlow(BasicPacketInfo packet, long activityTimeout, String label) {
 		super();
+		this.label=label;
 		this.activityTimeout = activityTimeout;
 		this.initParameters();
-		this.isBidirectional = true;		
+		this.isBidirectional = true;
 		firstPacket(packet);
 	}
 	
@@ -1076,7 +1080,11 @@ public class BasicFlow {
 		else{
 			return "BENIGN";
 		}*/
-        return "NeedManualLabel";
+		//"NeedManualLabel"
+		if (this.label==null) {
+			this.label="NeedManualLabel";
+		}
+        return this.label;
     }
 	
     public String dumpFlowBasedFeaturesEx() {

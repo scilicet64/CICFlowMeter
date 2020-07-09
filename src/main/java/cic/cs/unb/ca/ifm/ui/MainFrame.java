@@ -49,7 +49,7 @@ public class MainFrame extends JFrame{
 		offLinePane = new FlowOfflinePane();
         monitorPane = new FlowMonitorPane();
         visualPane = new FlowVisualPane();
-        getContentPane().add(monitorPane,BorderLayout.CENTER);
+        getContentPane().add(offLinePane,BorderLayout.CENTER);
 
         GuavaMgr.getInstance().getEventBus().register(this);
 

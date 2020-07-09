@@ -81,6 +81,10 @@ public class BasicPacketInfo {
 	}
 
 	public byte[] getPayloadData() {
+		if (payloadData==null){
+			System.out.println("Error: Trying to get getPayloadData (null)");
+			return null;
+		}
 		return Arrays.copyOf(payloadData,payloadData.length);
 	}
 	public void setPayloadData(byte[] payloadData) {

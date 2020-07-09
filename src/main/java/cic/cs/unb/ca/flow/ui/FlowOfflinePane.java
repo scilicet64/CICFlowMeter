@@ -155,6 +155,7 @@ public class FlowOfflinePane extends JPanel{
         JButton btnInputBrowse = new JButton("Browse");
         cmbInputEle = new Vector<>();
         cmbInput = new JComboBox<>(cmbInputEle);
+        setComboBox(cmbInput, cmbInputEle, new File("D:\\flowmeter_indir"));
         cmbInput.setEditable(true);
         btnInputBrowse.addActionListener(actionEvent -> {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -172,6 +173,7 @@ public class FlowOfflinePane extends JPanel{
         JButton btnInput2Browse = new JButton("Browse");
         cmbInputEle2 = new Vector<>();
         cmbInput2 = new JComboBox<>(cmbInputEle2);
+        setComboBox(cmbInput2, cmbInputEle2, new File("D:\\hoi"));
         cmbInput2.setEditable(true);
         btnInput2Browse.addActionListener(actionEvent -> {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -190,6 +192,7 @@ public class FlowOfflinePane extends JPanel{
         cmbOutputEle = new Vector<>();
         cmbOutput = new JComboBox<>(cmbOutputEle);
         cmbOutput.setEditable(true);
+        setComboBox(cmbOutput, cmbOutputEle, new File("D:\\test"));
         btnOutputBrowse.addActionListener(actionEvent -> {
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.removeChoosableFileFilter(pcapChooserFilter);
@@ -431,7 +434,8 @@ public class FlowOfflinePane extends JPanel{
                             flowCnt.clear();
                             break;
                     }
-                } else if (ReadPcapFileWorker.PROPERTY_FILE_CNT.equalsIgnoreCase(evt.getPropertyName())) {
+
+               } else if (ReadPcapFileWorker.PROPERTY_FILE_CNT.equalsIgnoreCase(evt.getPropertyName())) {
 
                     int max = (int) evt.getOldValue();
                     int cur = (int) evt.getNewValue()+1;

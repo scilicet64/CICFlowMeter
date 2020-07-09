@@ -166,7 +166,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         }
 
         if (!labelFileFullPath.exists()) {
-                System.out.println("Optional Label file not found");
+                System.out.println("Optional Label file not found: " + labelFileFullPath.getAbsolutePath());
         }else{
 
             try (Scanner scanner = new Scanner(labelFileFullPath);) {

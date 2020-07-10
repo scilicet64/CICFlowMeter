@@ -164,12 +164,14 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                 System.out.println("Saved file full path cannot be deleted");
             }
         }
-
+        Boolean idfoundInLabels=false;
         if (!labelFileFullPath.exists()) {
                 System.out.println("Optional Label file not found: " + labelFileFullPath.getAbsolutePath());
         }else{
 
             try (Scanner scanner = new Scanner(labelFileFullPath);) {
+                Boolean firstline= true;
+
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
                     List<String> values = new ArrayList<String>();
@@ -179,17 +181,41 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                             values.add(rowScanner.next());
                         }
                     }
-                    List<String> results = new ArrayList<String>();
-                    labels.put(values.get(0),values.get(values.size()-1));
+                    if (firstline){
+                        //String firstColumn=values.get(0);
+                        if (!values.get(0).equals("Flow ID")){
+                            System.out.println("Warning!!!: Flow ID not found in label-file found(" +values.get(0)+")");
+                        }
+                        else {
+                            idfoundInLabels = true;
+                        }
+                        if (!values.get(values.size()-1).equals("Label")){
+                            System.out.println("Warning!!!: Label not found in label-file");
+                        }
+                        firstline=false;
+                    }
+                    else {
+                        String id="";
+                        if (idfoundInLabels) {
+                            id = values.get(0);
+                        }
+                        else {
+                            //this.getSourceIP() + "-" + this.getDestinationIP() + "-" + this.srcPort  + "-" + this.dstPort  + "-" + this.protocol;
+                             id = values.get(0)+ "*" + values.get(1) + "*" + values.get(2);//Dst Port(0), Protocol(1), Timestamp(2)
+                            }
+                        //List<String> results = new ArrayList<String>();
+                        labels.put(id, values.get(values.size() - 1));
+                    }
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
+            System.out.println("Found label size:" + labels.size());
         }
 
         FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
         flowGen.addFlowListener(new FlowListener(fileName));
-        flowGen.addLabels(labels);
+        flowGen.addLabels(labels,idfoundInLabels);
         boolean readIP6 = false;
         boolean readIP4 = true;
         PacketReader packetReader = new PacketReader(inputFile, readIP4, readIP6);

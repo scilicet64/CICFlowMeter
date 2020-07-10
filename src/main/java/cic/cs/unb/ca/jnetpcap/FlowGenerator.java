@@ -46,6 +46,7 @@ public class FlowGenerator {
 	private long    flowActivityTimeOut;
 	private int     finishedFlowCount;
     private Dictionary<String, String> labels;
+    private Boolean idfoundInLabels;
 
     public FlowGenerator(boolean bidirectional, long flowTimeout, long activityTimeout) {
 		super();
@@ -97,7 +98,13 @@ public class FlowGenerator {
                                             }
                     //flow.endActiveIdleTime(currentTimestamp,this.flowActivityTimeOut, this.flowTimeOut, false);
     			}
-    			String label = labels.get(id);
+    			String label =null;
+    			if(this.idfoundInLabels){
+                   label= labels.get(id);
+                }else{
+                    label= labels.get(flow.getDstPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12()); //old labels had 12 hour timestamp without am/pm indicator
+                    if (label==null) label= labels.get(flow.getSrcPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12());
+                }
     			currentFlows.remove(id);    			
 				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut,label));
     			
@@ -127,6 +134,7 @@ public class FlowGenerator {
     		}
     	}else{
             String label = labels.get(packet.fwdFlowId());
+            if (label==null) label=labels.get(packet.bwdFlowId());
 			currentFlows.put(packet.fwdFlowId(), new BasicFlow(bidirectional,packet, this.flowActivityTimeOut,label));
     	}
     }
@@ -254,7 +262,8 @@ public class FlowGenerator {
     	return this.finishedFlowCount;
     }
 
-    public void addLabels(Dictionary<String, String> labels) {
+    public void addLabels(Dictionary<String, String> labels, Boolean idfoundInLabels) {
         this.labels = labels;
+        this.idfoundInLabels=idfoundInLabels;
     }
 }

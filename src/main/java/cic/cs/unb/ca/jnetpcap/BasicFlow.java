@@ -872,6 +872,10 @@ public class BasicFlow {
 	}
 	
 	public String getTimeStamp() {
+		return DateFormatter.parseDateFromLong(flowStartTime/1000L, "dd/MM/yyyy HH:mm:ss");
+	}
+
+	public String getTimeStamp12() {
 		return DateFormatter.parseDateFromLong(flowStartTime/1000L, "dd/MM/yyyy hh:mm:ss");
 	}
 	

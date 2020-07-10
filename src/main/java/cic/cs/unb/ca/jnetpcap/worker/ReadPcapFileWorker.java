@@ -157,7 +157,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
 
         File saveFileFullPath = new File(outPath+fileName+Utils.FLOW_SUFFIX);
 
-        File labelFileFullPath = new File(this.LabelDirectory+fileName+Utils.FLOW_SUFFIX);
+        File labelFileFullPath = new File(this.LabelDirectory+fileName.replace(".pcap","")+Utils.FLOW_SUFFIX);
 
         if (saveFileFullPath.exists()) {
             if (!saveFileFullPath.delete()) {
@@ -189,8 +189,8 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                         else {
                             idfoundInLabels = true;
                         }
-                        if (!values.get(values.size()-1).equals("Label")){
-                            System.out.println("Warning!!!: Label not found in label-file");
+                        if (!values.get(values.size()-1).replace(" ","").equals("Label")){
+                            System.out.println("Warning!!!: Label not found in label-file found("+values.get(values.size()-1)+")");
                         }
                         firstline=false;
                     }
@@ -201,6 +201,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                         }
                         else {
                             //this.getSourceIP() + "-" + this.getDestinationIP() + "-" + this.srcPort  + "-" + this.dstPort  + "-" + this.protocol;
+                            // fat warning.... timestamps do not match on ids2017 2018 datasets
                              id = values.get(0)+ "*" + values.get(1) + "*" + values.get(2);//Dst Port(0), Protocol(1), Timestamp(2)
                             }
                         //List<String> results = new ArrayList<String>();
@@ -247,7 +248,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         long end = System.currentTimeMillis();
 
         chunks.clear();
-        chunks.add(String.format("Done! Total %d flows",lines));
+        chunks.add(String.format("Done! Total %d flows",lines-1)); //don't count header
         chunks.add(String.format("Packets stats: Total=%d,Valid=%d,Discarded=%d",nTotal,nValid,nDiscarded));
         chunks.add(DividingLine);
         publish(chunks.toArray( new String[chunks.size()]));

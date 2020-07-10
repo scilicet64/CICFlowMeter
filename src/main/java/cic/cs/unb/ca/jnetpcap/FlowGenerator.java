@@ -102,8 +102,9 @@ public class FlowGenerator {
     			if(this.idfoundInLabels){
                    label= labels.get(id);
                 }else{
-                    label= labels.get(flow.getDstPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12()); //old labels had 12 hour timestamp without am/pm indicator
-                    if (label==null) label= labels.get(flow.getSrcPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12());
+    			    // seems timestamp does not match with csv to be continued......
+                   // label= labels.get(flow.getDstPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12()); //old labels had 12 hour timestamp without am/pm indicator
+                   // if (label==null) label= labels.get(flow.getSrcPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12());
                 }
     			currentFlows.remove(id);    			
 				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut,label));
@@ -234,7 +235,7 @@ public class FlowGenerator {
             }
 
             for (BasicFlow flow : currentFlows.values()) {
-                if(flow.packetCount()>1) {
+                if(flow.packetCount()>0) {
                     output.write((flow.dumpFlowBasedFeaturesEx() + LINE_SEP).getBytes());
                     total++;
                 }else{

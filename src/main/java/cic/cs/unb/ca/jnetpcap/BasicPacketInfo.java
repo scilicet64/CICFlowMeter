@@ -70,14 +70,16 @@ public class BasicPacketInfo {
         return this.flowId;
 	}
 
- 	public String fwdFlowId() {  
-		this.flowId = this.getSourceIP() + "-" + this.getDestinationIP() + "-" + this.srcPort  + "-" + this.dstPort  + "-" + this.protocol;
-		return this.flowId;
+ 	public String fwdFlowId(Boolean set) {
+		String id =this.getSourceIP() + "-" + this.getDestinationIP() + "-" + this.srcPort  + "-" + this.dstPort  + "-" + this.protocol;
+		if (set) this.flowId = id;
+		return id;
 	}
 	
-	public String bwdFlowId() {  
-		this.flowId = this.getDestinationIP() + "-" + this.getSourceIP() + "-" + this.dstPort  + "-" + this.srcPort  + "-" + this.protocol;
-		return this.flowId;
+	public String bwdFlowId(Boolean set) {
+		String id = this.getDestinationIP() + "-" + this.getSourceIP() + "-" + this.dstPort  + "-" + this.srcPort  + "-" + this.protocol;
+		if (set) this.flowId = id;
+		return id;
 	}
 
 	public byte[] getPayloadData() {

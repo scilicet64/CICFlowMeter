@@ -1,5 +1,6 @@
 package cic.cs.unb.ca.jnetpcap;
 
+import cic.cs.unb.ca.Sys;
 import cic.cs.unb.ca.jnetpcap.worker.FlowGenListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,40 +74,49 @@ public class FlowGenerator {
         }
         
     	BasicFlow   flow;
-    	long        currentTimestamp = packet.getTimeStamp();
-		    String id;
+    	long currentTimestamp = packet.getTimeStamp();
+		String id;
+        String other_id;
 
-    	if(this.currentFlows.containsKey(packet.fwdFlowId())||this.currentFlows.containsKey(packet.bwdFlowId())){
-	
-	if(this.currentFlows.containsKey(packet.fwdFlowId())) 
-		{id = packet.fwdFlowId();}
-    		else {
-		id = packet.bwdFlowId();}
-
+    	if(this.currentFlows.containsKey(packet.fwdFlowId(false))||this.currentFlows.containsKey(packet.bwdFlowId(false))){
+            if(this.currentFlows.containsKey(packet.fwdFlowId(false))) {
+                id = packet.fwdFlowId(true);
+                other_id = packet.bwdFlowId(false);
+            }else {
+                id = packet.bwdFlowId(true);
+                other_id = packet.fwdFlowId(false);
+            }
     		flow = currentFlows.get(id);
     		// Flow finished due flowtimeout: 
     		// 1.- we move the flow to finished flow list
     		// 2.- we eliminate the flow from the current flow list
     		// 3.- we create a new flow with the packet-in-process
-    		if((currentTimestamp -flow.getFlowStartTime())>flowTimeOut){
+    		if((currentTimestamp-flow.getFlowStartTime())>flowTimeOut){
+
     			if(flow.packetCount()>1){
-					if (mListener != null) {
+					if (mListener != null){
 						mListener.onFlowGenerated(flow);
-					    }
+					}
 					else{
-                                                finishedFlows.put(getFlowCount(), flow);
-                                            }
+                    finishedFlows.put(getFlowCount(), flow);
+                    }
                     //flow.endActiveIdleTime(currentTimestamp,this.flowActivityTimeOut, this.flowTimeOut, false);
     			}
     			String label =null;
     			if(this.idfoundInLabels){
                    label= labels.get(id);
+                    if (label==null) label=labels.get(other_id);
+                    if (label==null){
+                        System.out.println("Label1 not found:" + id);
+                        System.out.println("Label2 not found:" + packet.bwdFlowId(false));
+
+                    }
                 }else{
     			    // seems timestamp does not match with csv to be continued......
                    // label= labels.get(flow.getDstPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12()); //old labels had 12 hour timestamp without am/pm indicator
                    // if (label==null) label= labels.get(flow.getSrcPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12());
                 }
-    			currentFlows.remove(id);    			
+    			currentFlows.remove(id);
 				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut,label));
     			
     			int cfsize = currentFlows.size();
@@ -118,25 +128,45 @@ public class FlowGenerator {
     		// 1.- we add the packet-in-process to the flow (it is the last packet)
         	// 2.- we move the flow to finished flow list
         	// 3.- we eliminate the flow from the current flow list   	
-    		}else if(packet.hasFlagFIN()){
+    		}
+            else if(((flow.getFlagCount("FIN")>0) && packet.hasFlagACK() && !packet.hasFlagFIN()) || (packet.hasFlagRST() && packet.hasFlagACK())){
+                //logger.debug("FlagFIN/RST current has {} flow",currentFlows.size());
+                flow.addPacket(packet);
+                if (mListener != null) {
+                    mListener.onFlowGenerated(flow);
+                }
+                else {
+                    finishedFlows.put(getFlowCount(), flow);
+                }
+                currentFlows.remove(id);
+            }
+            else{
+                flow.updateActiveIdleTime(currentTimestamp,this.flowActivityTimeOut);
+                flow.addPacket(packet);
+                currentFlows.put(id,flow);
+            }
+
+    		/*else if(packet.hasFlagFIN()){ //removed because it fails to add the second FIN flag
     	    	logger.debug("FlagFIN current has {} flow",currentFlows.size());
     	    	flow.addPacket(packet);
                 if (mListener != null) {
                     mListener.onFlowGenerated(flow);
                 } 
-		else {
+		        else {
                     finishedFlows.put(getFlowCount(), flow);
                 }
+                System.out.println("currentFlows removed (FIN): " + id);
                 currentFlows.remove(id);
-    		}else{
-    			flow.updateActiveIdleTime(currentTimestamp,this.flowActivityTimeOut);
-    			flow.addPacket(packet);
-    			currentFlows.put(id,flow);
-    		}
+    		}*/
     	}else{
-            String label = labels.get(packet.fwdFlowId());
-            if (label==null) label=labels.get(packet.bwdFlowId());
-			currentFlows.put(packet.fwdFlowId(), new BasicFlow(bidirectional,packet, this.flowActivityTimeOut,label));
+    	    id = packet.fwdFlowId(true);
+            String label = labels.get(id);
+            if (label==null) label=labels.get(packet.bwdFlowId(false));
+            if (label==null) {
+                System.out.println("*Label1 not found:" + id + " ts:" + packet.getTimeStamp()) ;
+                System.out.println("*Label2 not found:" + packet.bwdFlowId(false));
+            }
+			currentFlows.put(id, new BasicFlow(bidirectional,packet, this.flowActivityTimeOut,label));
     	}
     }
 
@@ -235,8 +265,8 @@ public class FlowGenerator {
             }
 
             for (BasicFlow flow : currentFlows.values()) {
-                if(flow.packetCount()>0) {
-                    output.write((flow.dumpFlowBasedFeaturesEx() + LINE_SEP).getBytes());
+                if(flow.packetCount()>1) {
+                    output.write((flow.dumpFlowBasedFeaturesEx() + LINE_SEP ).getBytes());
                     total++;
                 }else{
 

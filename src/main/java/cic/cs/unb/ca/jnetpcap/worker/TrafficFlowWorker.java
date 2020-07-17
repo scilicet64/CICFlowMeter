@@ -28,7 +28,7 @@ public class TrafficFlowWorker extends SwingWorker<String,String> implements Flo
 	@Override
 	protected String doInBackground() {
 		
-		FlowGenerator   flowGen = new FlowGenerator(true,120000000L, 5000000L);
+		FlowGenerator   flowGen = new FlowGenerator(true,120000000L, 10000000L);
 		flowGen.addFlowListener(this);
 		int snaplen = 64 * 1024;//2048; // Truncate packet at this size
 		int promiscous = Pcap.MODE_PROMISCUOUS;

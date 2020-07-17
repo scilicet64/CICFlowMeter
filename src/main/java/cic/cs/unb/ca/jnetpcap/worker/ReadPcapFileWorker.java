@@ -138,7 +138,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         if(inputFile==null ||outPath==null ) {
             return;
         }
-        Dictionary labels = new Hashtable();
+        Dictionary<String, String> labels= new Hashtable();;
         Path p = Paths.get(inputFile);
         String fileName = p.getFileName().toString();//FilenameUtils.getName(inputFile);
 
@@ -166,12 +166,18 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         }
         Boolean idfoundInLabels=false;
         if (!labelFileFullPath.exists()) {
-                System.out.println("Optional Label file not found: " + labelFileFullPath.getAbsolutePath());
+                chunks.clear();
+                chunks.add(String.format("Optional Label file not found: %s",labelFileFullPath.getAbsolutePath()));
+                chunks.add(DividingLine);
+                publish(chunks.toArray( new String[chunks.size()]));
         }else{
 
             try (Scanner scanner = new Scanner(labelFileFullPath);) {
                 Boolean firstline= true;
-
+                chunks.clear();
+                chunks.add("Reading Label file...");
+                chunks.add(DividingLine);
+                publish(chunks.toArray( new String[chunks.size()]));
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
                     List<String> values = new ArrayList<String>();
@@ -205,13 +211,23 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                              id = values.get(0)+ "*" + values.get(1) + "*" + values.get(2);//Dst Port(0), Protocol(1), Timestamp(2)
                             }
                         //List<String> results = new ArrayList<String>();
-                        labels.put(id, values.get(values.size() - 1));
+                        String label = values.get(values.size() - 1);
+                        String foundLabel = labels.get(id);
+                        if (foundLabel!=null){
+                            if (!label.equals(foundLabel)) {
+                               System.out.println("Warning: label with id:" + id + " changed from:" + foundLabel+ " to:" + label);
+                            }
+                        }
+                        labels.put(id, label);
                     }
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-            System.out.println("Found label size:" + labels.size());
+            chunks.clear();
+            chunks.add(String.format("Found label size: %s",labels.size()));
+            chunks.add(DividingLine);
+            publish(chunks.toArray( new String[chunks.size()]));
         }
 
         FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
@@ -248,7 +264,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         long end = System.currentTimeMillis();
 
         chunks.clear();
-        chunks.add(String.format("Done! Total %d flows",lines-1)); //don't count header
+        chunks.add(String.format("Done! Total %d flows",lines-1));
         chunks.add(String.format("Packets stats: Total=%d,Valid=%d,Discarded=%d",nTotal,nValid,nDiscarded));
         chunks.add(DividingLine);
         publish(chunks.toArray( new String[chunks.size()]));

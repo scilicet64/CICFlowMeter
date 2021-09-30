@@ -16,7 +16,7 @@ import static cic.cs.unb.ca.jnetpcap.Utils.countLines;
 public class PcapReader {
 
 
-    public static void readFile(String inputFile, String outPath, long flowTimeout, long activityTimeout) {
+    public static void readFile(String inputFile, String outPath, long flowTimeout, long activityTimeout,String timezone) {
         if(inputFile==null ||outPath==null ) {
             return;
         }
@@ -37,7 +37,7 @@ public class PcapReader {
             }
         }
 
-        FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
+        FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout,timezone);
         flowGen.addFlowListener(new FlowListener(fileName,outPath));
         boolean readIP6 = false;
         boolean readIP4 = true;

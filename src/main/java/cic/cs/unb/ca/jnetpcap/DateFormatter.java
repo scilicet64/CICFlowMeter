@@ -6,15 +6,22 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class DateFormatter {
 	
-	public static String parseDateFromLong(long time, String format){
+	public static String parseDateFromLong(long time, String format,String timeZone){
 		try{
 			if (format == null){
 				format = "dd/MM/yyyy hh:mm:ss";					
 			}
+			if (timeZone == null){
+				timeZone = "CDT";
+			}
+
+			TimeZone tz = TimeZone.getTimeZone(timeZone);
 			SimpleDateFormat simpleFormatter = new SimpleDateFormat(format);
+			simpleFormatter.setTimeZone(tz);
 			Date tempDate = new Date(time);
 			return simpleFormatter.format(tempDate);
 		}catch(Exception ex){

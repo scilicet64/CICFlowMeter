@@ -37,6 +37,7 @@ public class FlowOfflinePane extends JPanel{
     private JComboBox<Long> param2;
     private Vector<Long> param1Ele;
     private Vector<Long> param2Ele;
+    private JTextField  paramTimeZone;
 
     private Box progressBox;
     private JProgressBar fileProgress;
@@ -173,7 +174,7 @@ public class FlowOfflinePane extends JPanel{
         JButton btnInput2Browse = new JButton("Browse");
         cmbInputEle2 = new Vector<>();
         cmbInput2 = new JComboBox<>(cmbInputEle2);
-        setComboBox(cmbInput2, cmbInputEle2, new File("D:\\hoi"));
+        setComboBox(cmbInput2, cmbInputEle2, new File("D:\\flowmeter_labels"));
         cmbInput2.setEditable(true);
         btnInput2Browse.addActionListener(actionEvent -> {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -192,7 +193,7 @@ public class FlowOfflinePane extends JPanel{
         cmbOutputEle = new Vector<>();
         cmbOutput = new JComboBox<>(cmbOutputEle);
         cmbOutput.setEditable(true);
-        setComboBox(cmbOutput, cmbOutputEle, new File("D:\\test"));
+        setComboBox(cmbOutput, cmbOutputEle, new File("D:\\flowmeter_output"));
         btnOutputBrowse.addActionListener(actionEvent -> {
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.removeChoosableFileFilter(pcapChooserFilter);
@@ -305,15 +306,22 @@ public class FlowOfflinePane extends JPanel{
 
         JLabel lbl2 = new JLabel("Activity Timeout:");
         param2Ele = new Vector<>();
-        param2Ele.add(10000000L);
+        param2Ele.add(5000000L);
         param2 = new JComboBox<>(param2Ele);
         param2.setEditable(true);
+
+        JLabel lbl3 = new JLabel("Timezone");
+        paramTimeZone = new JTextField();
+        paramTimeZone.setText("UTC");
+        paramTimeZone.setEditable(true);
 
         jPanel.add(lbl1);
         jPanel.add(param1);
         jPanel.add(Box.createHorizontalGlue());
         jPanel.add(lbl2);
         jPanel.add(param2);
+        jPanel.add(lbl3);
+        jPanel.add(paramTimeZone);
 
         return jPanel;
     }
@@ -405,13 +413,15 @@ public class FlowOfflinePane extends JPanel{
 
         long flowTimeout;
         long activityTimeout;
+        String timeZone;
         try {
             flowTimeout = getComboParameter(param1, param1Ele);
             activityTimeout = getComboParameter(param2, param2Ele);
+            timeZone = (String) paramTimeZone.getText();
 
             Map<String, Long> flowCnt = new HashMap<>();
 
-            ReadPcapFileWorker worker = new ReadPcapFileWorker(in, out.getPath(),in2.getPath(), flowTimeout, activityTimeout);
+            ReadPcapFileWorker worker = new ReadPcapFileWorker(in, out.getPath(),in2.getPath(), flowTimeout, activityTimeout,timeZone);
             worker.addPropertyChangeListener(evt -> {
                 ReadPcapFileWorker task = (ReadPcapFileWorker) evt.getSource();
                 if ("progress".equals(evt.getPropertyName())) {

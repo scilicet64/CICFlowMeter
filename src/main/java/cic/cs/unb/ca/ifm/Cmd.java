@@ -27,6 +27,7 @@ public class Cmd {
         long flowTimeout = 120000000L;
         long activityTimeout = 10000000L;
         String rootPath = System.getProperty("user.dir");
+        String timeZone = System.getProperty("timeZone");
         String pcapPath;
         String outPath;
 
@@ -70,20 +71,20 @@ public class Cmd {
 
 
         if (in.isDirectory()) {
-            readPcapDir(in,outPath,flowTimeout,activityTimeout);
+            readPcapDir(in,outPath,flowTimeout,activityTimeout,timeZone);
         } else {
 
             if (!SwingUtils.isPcapFile(in)) {
                 logger.info("Please select pcap file!");
             } else {
                 logger.info("CICFlowMeter received 1 pcap file");
-                readPcapFile(in.getPath(), outPath,flowTimeout,activityTimeout);
+                readPcapFile(in.getPath(), outPath,flowTimeout,activityTimeout,timeZone);
             }
         }
 
     }
 
-    private static void readPcapDir(File inputPath, String outPath, long flowTimeout, long activityTimeout) {
+    private static void readPcapDir(File inputPath, String outPath, long flowTimeout, long activityTimeout,String timeZone) {
         if(inputPath==null||outPath==null) {
             return;
         }
@@ -97,13 +98,13 @@ public class Cmd {
             }
             int cur = i + 1;
             System.out.println(String.format("==> %d / %d", cur, file_cnt));
-            readPcapFile(file.getPath(),outPath,flowTimeout,activityTimeout);
+            readPcapFile(file.getPath(),outPath,flowTimeout,activityTimeout,timeZone);
 
         }
         System.out.println("Completed!");
     }
 
-    private static void readPcapFile(String inputFile, String outPath, long flowTimeout, long activityTimeout) {
+    private static void readPcapFile(String inputFile, String outPath, long flowTimeout, long activityTimeout,String timeZone) {
         if(inputFile==null ||outPath==null ) {
             return;
         }
@@ -121,7 +122,7 @@ public class Cmd {
            }
         }
 
-        FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
+        FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout,timeZone);
         flowGen.addFlowListener(new FlowListener(fileName,outPath));
         boolean readIP6 = false;
         boolean readIP4 = true;

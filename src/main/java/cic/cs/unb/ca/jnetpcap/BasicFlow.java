@@ -14,6 +14,7 @@ public class BasicFlow {
 	private		SummaryStatistics 		bwdPktStats = null;
 	private 	List<BasicPacketInfo> 	forward = null;
 	private		List<BasicPacketInfo> 	backward = null;
+	final private static  String[] hexdict = {"00","01","02","03","04","05","06","07","08","09","0a","0b","0c","0d","0e","0f","10","11","12","13","14","15","16","17","18","19","1a","1b","1c","1d","1e","1f","20","21","22","23","24","25","26","27","28","29","2a","2b","2c","2d","2e","2f","30","31","32","33","34","35","36","37","38","39","3a","3b","3c","3d","3e","3f","40","41","42","43","44","45","46","47","48","49","4a","4b","4c","4d","4e","4f","50","51","52","53","54","55","56","57","58","59","5a","5b","5c","5d","5e","5f","60","61","62","63","64","65","66","67","68","69","6a","6b","6c","6d","6e","6f","70","71","72","73","74","75","76","77","78","79","7a","7b","7c","7d","7e","7f","80","81","82","83","84","85","86","87","88","89","8a","8b","8c","8d","8e","8f","90","91","92","93","94","95","96","97","98","99","9a","9b","9c","9d","9e","9f","a0","a1","a2","a3","a4","a5","a6","a7","a8","a9","aa","ab","ac","ad","ae","af","b0","b1","b2","b3","b4","b5","b6","b7","b8","b9","ba","bb","bc","bd","be","bf","c0","c1","c2","c3","c4","c5","c6","c7","c8","c9","ca","cb","cc","cd","ce","cf","d0","d1","d2","d3","d4","d5","d6","d7","d8","d9","da","db","dc","dd","de","df","e0","e1","e2","e3","e4","e5","e6","e7","e8","e9","ea","eb","ec","ed","ee","ef","f0","f1","f2","f3","f4","f5","f6","f7","f8","f9","fa","fb","fc","fd","fe","ff"};
 
 	private 	long forwardBytes;
 	private 	long backwardBytes;
@@ -44,7 +45,8 @@ public class BasicFlow {
     private    	long   startActiveTime;
     private    	long   endActiveTime;
     private    	String flowId = null;
-    private 	long[] byteCounts;
+    private 	long[] byteCounts = new long[256];
+	private 	static int maxPayloadStringSize = 2000; //in hexstring (one byte has length:2)
     
     private     SummaryStatistics flowIAT = null;
     private     SummaryStatistics forwardIAT = null;
@@ -57,11 +59,15 @@ public class BasicFlow {
     private     long   forwardLastSeen;
     private     long   backwardLastSeen;
     private     long   activityTimeout;
+    private		String fwdPayload=null;
+	private		String bwdPayload=null;
     private 	String label;
+	private 	String tz;
 
-	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, byte[] flowSrc, byte[] flowDst, int flowSrcPort, int flowDstPort, long activityTimeout, String label) {
+	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, byte[] flowSrc, byte[] flowDst, int flowSrcPort, int flowDstPort, long activityTimeout, String label, String tz) {
 		super();
 		this.label=label;
+		this.tz=tz;
 		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = isBidirectional;
@@ -72,18 +78,20 @@ public class BasicFlow {
 		this.dstPort = flowDstPort;
 	}
 
-	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, long activityTimeout, String label) {
+	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, long activityTimeout, String label, String tz) {
 		super();
 		this.label=label;
+		this.tz=tz;
 		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = isBidirectional;
 		this.firstPacket(packet);
 	}
 
-	public BasicFlow(BasicPacketInfo packet, long activityTimeout, String label) {
+	public BasicFlow(BasicPacketInfo packet, long activityTimeout, String label, String tz) {
 		super();
 		this.label=label;
+		this.tz=tz;
 		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = true;
@@ -115,11 +123,12 @@ public class BasicFlow {
 		this.bURG_cnt=0;
 		this.fHeaderBytes=0L;
 		this.bHeaderBytes=0L;
-		this.byteCounts = new long[256];
+		/*this.byteCounts = new long[256];
 		for (int i = 0; i < 256L; i++)
 		{
 			byteCounts[i]=0;
-		}
+			System.out.print(",\""+ String.format("%02x", i) + "\"");
+		}*/
 	}
 	
 	
@@ -182,20 +191,47 @@ public class BasicFlow {
     	long currentTimestamp = packet.getTimeStamp();
     	long payloadLength = packet.getPayloadBytes();
     	//System.out.println("currentTimestamp: " + currentTimestamp);
+		//StringBuilder payloadString = null;
+		String payloadString=null;
     	if (payloadLength>0){
+			payloadString = "";
 			byte[] payload = packet.getPayloadData();
 			for(int i=0;i<payloadLength;i++){
 				int one = payload[i] & 0xFF;
+				payloadString = payloadString.concat(hexdict[one]);
 				this.byteCounts[one]++;
 			}
 		}
-
+    	long payloadHexSize = payloadLength*2;
+    	if (payloadHexSize>this.maxPayloadStringSize){
+			payloadString = payloadString.substring(0,this.maxPayloadStringSize);
+			payloadHexSize = this.maxPayloadStringSize;
+		}
+		//payloadString = null;
     	if(isBidirectional){
 			this.flowLengthStats.addValue((double)packet.getPayloadBytes());
 
     		if(Arrays.equals(this.src, packet.getSrc())){
 				if(packet.getPayloadBytes() >=1){
 					this.Act_data_pkt_forward++;
+				}
+				if (payloadLength>0) {
+					if (this.fwdPayload==null){
+						this.fwdPayload = payloadString;
+					}
+					else
+					{
+						int fwdPayloadLength = this.fwdPayload.length();
+						if (fwdPayloadLength<this.maxPayloadStringSize) {
+							int allowedAddition = this.maxPayloadStringSize - fwdPayloadLength;
+							if (allowedAddition < payloadHexSize) {
+								this.fwdPayload = this.fwdPayload.concat(payloadString.substring(0, allowedAddition));
+							} else {
+								this.fwdPayload = this.fwdPayload.concat(payloadString);
+							}
+						}
+
+					}
 				}
 				this.fwdPktStats.addValue((double)packet.getPayloadBytes());
 				this.fHeaderBytes +=packet.getHeaderBytes();
@@ -207,6 +243,23 @@ public class BasicFlow {
 				this.min_seg_size_forward = Math.min(packet.getHeaderBytes(),this.min_seg_size_forward);
 
     		}else{
+				if (payloadLength>0) {
+
+					if (this.bwdPayload==null){
+						this.bwdPayload = payloadString;
+					}
+					else{
+						int fwdPayloadLength = this.bwdPayload.length();
+						if (fwdPayloadLength<this.maxPayloadStringSize) {
+							int allowedAddition = this.maxPayloadStringSize - fwdPayloadLength;
+							if (allowedAddition < payloadHexSize) {
+								this.bwdPayload = this.bwdPayload.concat(payloadString.substring(0, allowedAddition));
+							} else {
+								this.bwdPayload = this.bwdPayload.concat(payloadString);
+							}
+						}
+					}
+				}
 				this.bwdPktStats.addValue((double)packet.getPayloadBytes());
 				Init_Win_bytes_backward = packet.getTCPWindow();
 				this.bHeaderBytes+=packet.getHeaderBytes();
@@ -221,6 +274,22 @@ public class BasicFlow {
 			if(packet.getPayloadBytes() >=1) {
 				this.Act_data_pkt_forward++;
 			}
+			if (payloadLength>0) {
+				if (this.fwdPayload==null){
+					this.fwdPayload = payloadString;
+				}
+				else{
+					int fwdPayloadLength = this.fwdPayload.length();
+					if (fwdPayloadLength<this.maxPayloadStringSize) {
+						int allowedAddition = this.maxPayloadStringSize - fwdPayloadLength;
+						if (allowedAddition < payloadHexSize) {
+							this.fwdPayload = this.fwdPayload.concat(payloadString.substring(0, allowedAddition));
+						} else {
+							this.fwdPayload = this.fwdPayload.concat(payloadString);
+						}
+					}
+				}
+			}
 			this.fwdPktStats.addValue((double)packet.getPayloadBytes());
 			this.flowLengthStats.addValue((double)packet.getPayloadBytes());
 			this.fHeaderBytes +=packet.getHeaderBytes();
@@ -230,7 +299,6 @@ public class BasicFlow {
     		this.forwardLastSeen = currentTimestamp;
 			this.min_seg_size_forward = Math.min(packet.getHeaderBytes(),this.min_seg_size_forward);
     	}
-
     	this.flowIAT.addValue(packet.getTimeStamp()-this.flowLastSeen);
     	this.flowLastSeen = packet.getTimeStamp();
     }
@@ -611,7 +679,7 @@ public class BasicFlow {
     	dump+=getDstPort()+",";
     	dump+=getProtocol()+",";
 		//dump+=this.flowStartTime+",";
-    	dump+=DateFormatter.parseDateFromLong(this.flowStartTime/1000L, "dd/MM/yyyy HH:mm:ss")+",";
+    	dump+=DateFormatter.parseDateFromLong(this.flowStartTime/1000L, "dd/MM/yyyy HH:mm:ss",tz)+",";
     	long flowDuration = this.flowLastSeen - this.flowStartTime; 
     	dump+=flowDuration+",";
 		dump+=this.fwdPktStats.getN()+",";
@@ -729,6 +797,8 @@ public class BasicFlow {
     	for(int i=0;i<256;i++){
 			dump+=","+this.byteCounts[i];
 		}
+		dump+=","+ getPayloadSent();
+		dump+=","+ getPayloadReceived();
 		dump+=","+ getLabel();
 
 		/*if(FormatUtils.ip(src).equals("147.32.84.165") | FormatUtils.ip(dst).equals("147.32.84.165")){
@@ -872,11 +942,11 @@ public class BasicFlow {
 	}
 	
 	public String getTimeStamp() {
-		return DateFormatter.parseDateFromLong(flowStartTime/1000L, "dd/MM/yyyy HH:mm:ss");
+		return DateFormatter.parseDateFromLong(flowStartTime/1000L, "dd/MM/yyyy HH:mm:ss",this.tz);
 	}
 
 	public String getTimeStamp12() {
-		return DateFormatter.parseDateFromLong(flowStartTime/1000L, "dd/MM/yyyy hh:mm:ss");
+		return DateFormatter.parseDateFromLong(flowStartTime/1000L, "dd/MM/yyyy hh:mm:ss",this.tz);
 	}
 	
 	public long getFlowDuration() {
@@ -1079,7 +1149,15 @@ public class BasicFlow {
 	public double getIdleMin() {
 		return (flowIdle.getN()>0)? flowIdle.getMin():0;
 	}
-	
+
+	public String getPayloadSent(){
+		return this.fwdPayload;
+	}
+
+	public String getPayloadReceived(){
+		return this.bwdPayload;
+	}
+
 	public String getLabel() {
 		//the original is "|". I think it should be "||" need to check,
 		/*if(FormatUtils.ip(src).equals("147.32.84.165") || FormatUtils.ip(dst).equals("147.32.84.165")){
@@ -1264,7 +1342,9 @@ public class BasicFlow {
 		for(int i=0;i<256;i++){
 			dump.append(this.byteCounts[i]).append(separator);
 		}
-        dump.append(getLabel());
+		dump.append(getPayloadSent()).append(separator);
+		dump.append(getPayloadReceived()).append(separator);
+		dump.append(getLabel());
 
     	
     	return dump.toString();

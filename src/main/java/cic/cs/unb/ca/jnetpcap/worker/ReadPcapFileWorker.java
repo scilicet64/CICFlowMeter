@@ -31,13 +31,15 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
     private String outPutDirectory;
     private String LabelDirectory;
     private List<String> chunks;
+    private String timezone;
 
-    public ReadPcapFileWorker(File inputFile, String outPutDir, String labelDir) {
+    public ReadPcapFileWorker(File inputFile, String outPutDir, String labelDir,String timeZone) {
         super();
         pcapPath = inputFile;
         outPutDirectory = outPutDir;
         LabelDirectory = labelDir;
         chunks = new ArrayList<>();
+        this.timezone = timezone;
 
         if(!outPutDirectory.endsWith(FILE_SEP)) {
             outPutDirectory = outPutDirectory + FILE_SEP;
@@ -51,12 +53,13 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         activityTimeout = 5000000L;
     }
 
-    public ReadPcapFileWorker(File inputFile, String outPutDir, String labelDir, long param1,long param2) {
+    public ReadPcapFileWorker(File inputFile, String outPutDir, String labelDir, long param1,long param2,String timezone) {
         super();
         pcapPath = inputFile;
         outPutDirectory = outPutDir;
         LabelDirectory = labelDir;
         chunks = new ArrayList<>();
+        this.timezone = timezone;
 
         if(!outPutDirectory.endsWith(FILE_SEP)) {
             outPutDirectory = outPutDirectory + FILE_SEP;
@@ -174,6 +177,8 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
 
             try (Scanner scanner = new Scanner(labelFileFullPath);) {
                 Boolean firstline= true;
+                Integer indexoffset = 0; //used when index is found in csv
+                Integer labelOffset = 2;
                 chunks.clear();
                 chunks.add("Reading Label file...");
                 chunks.add(DividingLine);
@@ -188,6 +193,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                         }
                     }
                     if (firstline){
+                        if (line.startsWith(",")) indexoffset=1;
                         //String firstColumn=values.get(0);
                         if (!values.get(0).equals("Flow ID")){
                             System.out.println("Warning!!!: Flow ID not found in label-file found(" +values.get(0)+")");
@@ -195,27 +201,30 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                         else {
                             idfoundInLabels = true;
                         }
-                        if (!values.get(values.size()-1).replace(" ","").equals("Label")){
-                            System.out.println("Warning!!!: Label not found in label-file found("+values.get(values.size()-1)+")");
+                        if (!values.get(values.size()-labelOffset).replace(" ","").equals("Label")){
+                            System.out.println("Warning!!!: Label not found in label-file found("+values.get(values.size()-labelOffset)+")");
                         }
                         firstline=false;
                     }
                     else {
                         String id="";
                         if (idfoundInLabels) {
-                            id = values.get(0);
+                            id = values.get(0+indexoffset);
                         }
                         else {
                             //this.getSourceIP() + "-" + this.getDestinationIP() + "-" + this.srcPort  + "-" + this.dstPort  + "-" + this.protocol;
                             // fat warning.... timestamps do not match on ids2017 2018 datasets
-                             id = values.get(0)+ "*" + values.get(1) + "*" + values.get(2);//Dst Port(0), Protocol(1), Timestamp(2)
+                             id = values.get(0+indexoffset)+ "*" + values.get(1+indexoffset) + "*" + values.get(2+indexoffset);//Dst Port(0), Protocol(1), Timestamp(2)
                             }
                         //List<String> results = new ArrayList<String>();
-                        String label = values.get(values.size() - 1);
+                        String label = values.get(values.size() - labelOffset);
                         String foundLabel = labels.get(id);
                         if (foundLabel!=null){
                             if (!label.equals(foundLabel)) {
-                               System.out.println("Warning: label with id:" + id + " changed from:" + foundLabel+ " to:" + label);
+                                System.out.println("Warning: label with id:" + id + " changed from:" + foundLabel+ " to:" + label);
+                                if (label.equals("BENIGN")){
+                                    label = foundLabel;
+                                }
                             }
                         }
                         labels.put(id, label);
@@ -230,13 +239,13 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
             publish(chunks.toArray( new String[chunks.size()]));
         }
 
-        FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
+        FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout,timezone);
         flowGen.addFlowListener(new FlowListener(fileName));
         flowGen.addLabels(labels,idfoundInLabels);
         boolean readIP6 = false;
         boolean readIP4 = true;
         PacketReader packetReader = new PacketReader(inputFile, readIP4, readIP6);
-        publish(String.format("Working on... %s",inputFile));
+        publish(String.format("WorKing on... %s",inputFile));
         logger.debug("Working on... {}",inputFile);
 
         int nValid=0;

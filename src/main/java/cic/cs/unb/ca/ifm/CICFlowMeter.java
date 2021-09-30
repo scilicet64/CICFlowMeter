@@ -28,6 +28,8 @@ public class CICFlowMeter {
 		int     totalFlows = 0;
 		
 		String rootPath = System.getProperty("user.dir");
+		String timeZone = System.getProperty("timezone");
+
 		String pcapPath;
 		String outpath;
 		
@@ -64,7 +66,7 @@ public class CICFlowMeter {
 		logger.info("CICFlowMeterV2 found: {} Files.",pcapfiles.length);
 	
 		for(String file:pcapfiles){
-			flowGen = new FlowGenerator(true,120000000L, 10000000L);
+			flowGen = new FlowGenerator(true,120000000L, 10000000L,timeZone);
 			packetReader = new PacketReader(pcapPath+file,readIP4,readIP6);
 			logger.info("");
 			logger.info("");

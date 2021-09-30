@@ -45,13 +45,15 @@ public class FlowGenerator {
 	private boolean bidirectional;
 	private long    flowTimeOut;
 	private long    flowActivityTimeOut;
+    private String timeZone;
 	private int     finishedFlowCount;
     private Dictionary<String, String> labels;
     private Boolean idfoundInLabels;
 
-    public FlowGenerator(boolean bidirectional, long flowTimeout, long activityTimeout) {
+    public FlowGenerator(boolean bidirectional, long flowTimeout, long activityTimeout,String timeZone) {
 		super();
 		this.bidirectional = bidirectional;
+        this.timeZone = timeZone;
 		this.flowTimeOut = flowTimeout;
 		this.flowActivityTimeOut = activityTimeout; 
 		init();
@@ -117,7 +119,7 @@ public class FlowGenerator {
                    // if (label==null) label= labels.get(flow.getSrcPort() +"*" + flow.getProtocol() +"*" + flow.getTimeStamp12());
                 }
     			currentFlows.remove(id);
-				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut,label));
+				currentFlows.put(id, new BasicFlow(bidirectional,packet,flow.getSrc(),flow.getDst(),flow.getSrcPort(),flow.getDstPort(), this.flowActivityTimeOut,label,this.timeZone));
     			
     			int cfsize = currentFlows.size();
     			if(cfsize%50==0) {
@@ -161,12 +163,13 @@ public class FlowGenerator {
     	}else{
     	    id = packet.fwdFlowId(true);
             String label = labels.get(id);
+
             if (label==null) label=labels.get(packet.bwdFlowId(false));
             if (label==null) {
                 System.out.println("*Label1 not found:" + id + " ts:" + packet.getTimeStamp()) ;
                 System.out.println("*Label2 not found:" + packet.bwdFlowId(false));
             }
-			currentFlows.put(id, new BasicFlow(bidirectional,packet, this.flowActivityTimeOut,label));
+			currentFlows.put(id, new BasicFlow(bidirectional,packet, this.flowActivityTimeOut,label,this.timeZone));
     	}
     }
 

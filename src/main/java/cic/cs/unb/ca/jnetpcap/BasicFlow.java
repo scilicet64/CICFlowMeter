@@ -29,6 +29,8 @@ public class BasicFlow {
 	private 	int bPSH_cnt;
 	private 	int fURG_cnt;
 	private 	int bURG_cnt;
+	private     int fFIN_cnt;
+	private     int bFIN_cnt;
 
 	private 	long Act_data_pkt_forward;
 	private 	long min_seg_size_forward;
@@ -121,6 +123,8 @@ public class BasicFlow {
 		this.bPSH_cnt=0;
 		this.fURG_cnt=0;
 		this.bURG_cnt=0;
+		this.fFIN_cnt=0;
+		this.bFIN_cnt=0;		
 		this.fHeaderBytes=0L;
 		this.bHeaderBytes=0L;
 		/*this.byteCounts = new long[256];
@@ -432,7 +436,7 @@ public class BasicFlow {
 			sfAcHelper   = packet.getTimeStamp();
 		}
 		//System.out.print(" - "+(packet.timeStamp - sfLastPacketTS));
-		if( (packet.getTimeStamp() - (sfLastPacketTS)/(double)1000000)   > 1.0 ){
+		if(((packet.getTimeStamp() - sfLastPacketTS)/(double)1000000)  > 1.0){
 			sfCount ++ ;
 			long lastSFduration = packet.getTimeStamp() - sfAcHelper;
 			updateActiveIdleTime(packet.getTimeStamp(), this.activityTimeout);
@@ -763,7 +767,7 @@ public class BasicFlow {
 		dump+=fAvgBytesPerBulk()+",";
 		dump+=fAvgPacketsPerBulk()+",";
 		dump+=fAvgBulkRate()+",";
-		dump+=fAvgBytesPerBulk()+",";
+		dump+=bAvgBytesPerBulk()+",";
 		dump+=bAvgPacketsPerBulk()+",";
 		dump+=bAvgBulkRate()+",";
 
@@ -1069,6 +1073,24 @@ public class BasicFlow {
 	public int getBwdURGFlags() {
 		return bURG_cnt;
 	}
+	
+	public int getFwdFINFlags() {
+		return fFIN_cnt;
+	}
+	
+	public int getBwdFINFlags() {
+		return bFIN_cnt;
+	}
+	
+	public int setFwdFINFlags() {
+		fFIN_cnt++;
+		return fFIN_cnt;
+	}
+	
+	public int setBwdFINFlags() {
+		bFIN_cnt++;
+		return bFIN_cnt;
+	}	
 	
 	public long getFwdHeaderLength() {
 		return fHeaderBytes;

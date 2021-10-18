@@ -100,7 +100,7 @@ public class TrafficFlowWorker extends SwingWorker<String,String> implements Flo
 	}
 
 	@Override
-	public void onFlowGenerated(BasicFlow flow) {
+	public void onFlowGenerated(BasicFlow flow,String label) {
         firePropertyChange(PROPERTY_FLOW,null,flow);
 	}
 }

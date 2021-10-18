@@ -138,7 +138,15 @@ applicationDistribution.into("bin") {
 mainClassName = "cic.cs.unb.ca.ifm.App"
 applicationName = "CICFlowMeter"
 applicationDefaultJvmArgs = ["-Djava.library.path=../lib/native"]
+manifest {
 
+	attributes 'Premain-Class': 'swing.common.ObjectSizeFetcher'
+	attributes 'Can-Retransform-Classes': true
+	attributes 'Implementation-Title': 'Gradle Jar File Example',
+			'Implementation-Version': version,
+			'Main-Class': 'cic.cs.unb.ca.ifm.App'
+
+}
 applicationDistribution.from("jnetpcap/linux/jnetpcap-1.4.r1425") {
     include "*.so"
     into('lib/native')

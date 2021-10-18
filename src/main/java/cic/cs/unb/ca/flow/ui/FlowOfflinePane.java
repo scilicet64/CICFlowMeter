@@ -13,11 +13,16 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 public class FlowOfflinePane extends JPanel{
     protected static final Logger logger = LoggerFactory.getLogger(FlowOfflinePane.class);
@@ -312,8 +317,48 @@ public class FlowOfflinePane extends JPanel{
 
         JLabel lbl3 = new JLabel("Timezone");
         paramTimeZone = new JTextField();
-        paramTimeZone.setText("UTC");
+        String zoneID = "US/Pacific";//ZoneId.systemDefault().toString();
+        paramTimeZone.setText(String.valueOf(zoneID));
         paramTimeZone.setEditable(true);
+        //paramTimeZone.addKeyListener();
+
+
+        paramTimeZone.addActionListener(actionEvent -> {
+            try{
+                 String changed_zoneID = paramTimeZone.getText();
+                 LocalDateTime localDateTime = LocalDateTime.now();
+                 if (changed_zoneID.equals("")){
+                    for (String zoneId : ZoneId.getAvailableZoneIds()) {
+                        ZoneId id = ZoneId.of(zoneId);
+                        // LocalDateTime -> ZonedDateTime
+                        ZonedDateTime zonedDateTime = localDateTime.atZone(id);
+                        // ZonedDateTime -> ZoneOffset
+                        ZoneOffset zoneOffset = zonedDateTime.getOffset();
+                        updateOut(id.toString() + " offset: " + zoneOffset.toString());
+                    }
+                }
+
+                DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
+                ZonedDateTime time = localDateTime.atZone(ZoneId.systemDefault());
+                ZoneOffset zoneOffset = time.getOffset();
+                System.out.println("localtime: " + formatter.format(time) + " local offset: " + zoneOffset);
+                System.out.println("TZ: "+ changed_zoneID + " " + formatter.format(time.withZoneSameInstant(ZoneId.of(changed_zoneID))));
+                updateOut("TZ: "+ changed_zoneID + " " + formatter.format(time.withZoneSameInstant(ZoneId.of(changed_zoneID))) + " offset:" + time.withZoneSameInstant(ZoneId.of(changed_zoneID)).getOffset().toString());
+            } catch (Exception e) {
+                //
+            }
+        });
+
+        LocalDateTime localDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
+        System.out.println("localtime: " + formatter.format(localDateTime));
+        System.out.println("TZ: "+ zoneID + " " + formatter.format(localDateTime.atZone( ZoneId.of(zoneID) )));
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of(zoneID));
+        ZoneOffset zoneOffset = zonedDateTime.getOffset();
+        updateOut("TZ: "+ zoneID + " " + formatter.format(localDateTime) + " offset:" + zoneOffset.toString());
+
+
+
 
         jPanel.add(lbl1);
         jPanel.add(param1);
@@ -418,6 +463,13 @@ public class FlowOfflinePane extends JPanel{
             flowTimeout = getComboParameter(param1, param1Ele);
             activityTimeout = getComboParameter(param2, param2Ele);
             timeZone = (String) paramTimeZone.getText();
+
+            LocalDateTime localDateTime = LocalDateTime.now();
+            DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
+            System.out.println("localtime: " + formatter.format(localDateTime));
+            System.out.println("TZ: "+ timeZone + " " + formatter.format(localDateTime.atZone(ZoneId.of(timeZone))));
+            updateOut("localtime: " + formatter.format(localDateTime));
+            updateOut("TZ: "+ timeZone + " " + formatter.format(localDateTime.atZone(ZoneId.of(timeZone))));
 
             Map<String, Long> flowCnt = new HashMap<>();
 

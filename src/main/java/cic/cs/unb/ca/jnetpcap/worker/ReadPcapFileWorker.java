@@ -160,7 +160,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
 
         File saveFileFullPath = new File(outPath+fileName+Utils.FLOW_SUFFIX);
 
-        File labelFileFullPath = new File(this.LabelDirectory+fileName.replace(".pcap","")+Utils.FLOW_SUFFIX);
+        File labelFileFullPath = new File(this.LabelDirectory+fileName+Utils.FLOW_SUFFIX);
 
         if (saveFileFullPath.exists()) {
             if (!saveFileFullPath.delete()) {
@@ -178,7 +178,11 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
             try (Scanner scanner = new Scanner(labelFileFullPath);) {
                 Boolean firstline= true;
                 Integer indexoffset = 0; //used when index is found in csv
-                Integer labelOffset = 2;
+                Integer flowID_index= -1;
+                Integer label_index= -1;
+                Integer activity_index= -1;
+                Integer stage_index= -1;
+                Integer timestamp_index= -1;
                 chunks.clear();
                 chunks.add("Reading Label file...");
                 chunks.add(DividingLine);
@@ -194,40 +198,86 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
                     }
                     if (firstline){
                         if (line.startsWith(",")) indexoffset=1;
+                        long totalColumns = line.chars().filter(ch -> ch == ',').count();
                         //String firstColumn=values.get(0);
-                        if (!values.get(0).equals("Flow ID")){
-                            System.out.println("Warning!!!: Flow ID not found in label-file found(" +values.get(0)+")");
+                        for(int i=0; i<values.size();i++){
+                            String columnName = values.get(i).replace(" ","").toLowerCase();
+                            if(columnName.equals("flowid")){
+                                flowID_index=i;
+                                idfoundInLabels=true;
+                            }
+                            if(columnName.equals("srcip")){
+                                indexoffset=i;//used for creating Flowid when it is missing
+                            }
+                            if(columnName.equals("timestamp")){
+                                timestamp_index=i; //todo: can be used to match label with timestamp
+                                //using timestamp for labels will not work when this tool's timeout settings is different from the original labels
+                            }
+                            if(columnName.equals("label")){
+                                label_index=i;
+                            }
+                            if(columnName.equals("activity")){
+                                activity_index=i;
+                            }
+                            if(columnName.equals("stage")){
+                                stage_index=i;
+                                if(activity_index==-1){
+                                    System.out.println("Warning!!!: column stage found, but no activity column, using stage as label");
+                                }
+                            }
+
                         }
-                        else {
-                            idfoundInLabels = true;
+
+                        if(!idfoundInLabels){
+                            System.out.println("Warning!!!: Flow ID not found in label-file found(" +values.get(flowID_index)+")");
                         }
-                        if (!values.get(values.size()-labelOffset).replace(" ","").equals("Label")){
-                            System.out.println("Warning!!!: Label not found in label-file found("+values.get(values.size()-labelOffset)+")");
-                        }
+
                         firstline=false;
                     }
                     else {
                         String id="";
+                        String timestamp="";
                         if (idfoundInLabels) {
-                            id = values.get(0+indexoffset);
+                            id = values.get(flowID_index);
                         }
                         else {
                             //this.getSourceIP() + "-" + this.getDestinationIP() + "-" + this.srcPort  + "-" + this.dstPort  + "-" + this.protocol;
                             // fat warning.... timestamps do not match on ids2017 2018 datasets
                              id = values.get(0+indexoffset)+ "*" + values.get(1+indexoffset) + "*" + values.get(2+indexoffset);//Dst Port(0), Protocol(1), Timestamp(2)
                             }
+                        if(timestamp_index!=-1){
+                            timestamp=values.get(timestamp_index);
+                        }
+                        //id=id+"_"+timestamp; //
                         //List<String> results = new ArrayList<String>();
-                        String label = values.get(values.size() - labelOffset);
-                        String foundLabel = labels.get(id);
-                        if (foundLabel!=null){
-                            if (!label.equals(foundLabel)) {
-                                System.out.println("Warning: label with id:" + id + " changed from:" + foundLabel+ " to:" + label);
-                                if (label.equals("BENIGN")){
-                                    label = foundLabel;
+                        if((label_index!=-1)||(activity_index!=-1) ||(stage_index!=-1)){
+                            String label ="";
+                            String benign_check = "";
+                            if (label_index!=-1){
+                                label = values.get(label_index);
+                            }
+                            else if ((activity_index!=-1)&&(stage_index!=-1)){
+                                label = values.get(activity_index) + "," + values.get(stage_index);
+                                benign_check = "benign,benign";
+                            }else if (activity_index!=-1){
+                                label = values.get(activity_index);
+                                benign_check = "benign";
+                            }else if (stage_index!=-1){
+                                label = values.get(stage_index);
+                                benign_check = "benign";
+                            }
+
+                            String foundLabel = labels.get(id);
+                            if (foundLabel!=null){
+                                if (!label.equals(foundLabel)) {
+                                    System.out.println("Warning: label with id:" + id + " changed from:" + foundLabel+ " to:" + label);
+                                    if (label.toLowerCase().replace(" ","").replace("normal","benign").equals(benign_check)){
+                                        label = foundLabel;
+                                    }
                                 }
                             }
-                        }
-                        labels.put(id, label);
+                            labels.put(id, label);
+                    }
                     }
                 }
             } catch (FileNotFoundException e) {
@@ -302,7 +352,7 @@ public class ReadPcapFileWorker extends SwingWorker<List<String>,String> {
         }
 
         @Override
-        public void onFlowGenerated(BasicFlow flow) {
+        public void onFlowGenerated(BasicFlow flow,String label) {
             firePropertyChange(PROPERTY_FLOW,fileName,flow);
         }
     }

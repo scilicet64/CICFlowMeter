@@ -351,7 +351,8 @@ public enum FlowFeature {
     payload255("Payload255","p255"),				//340
     fwdpayload("PayloadSent","fwdpayload"),		//341
     bwdpayload("PayloadReceived","bwdpayload"),//342
-    Label("Label","LBL",new String[]{"NeedManualLabel"});	//343
+    Activity("Activity","Act",new String[]{"NeedManualLabel"}),	//343
+    Stage("Stage","Stg",new String[]{"NeedManualLabel"});	//344
 
 
 	protected static final Logger logger = LoggerFactory.getLogger(FlowFeature.class);

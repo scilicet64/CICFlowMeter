@@ -89,7 +89,7 @@ public class PcapReader {
         }
 
         @Override
-        public void onFlowGenerated(BasicFlow flow) {
+        public void onFlowGenerated(BasicFlow flow,String label) {
 
             String flowDump = flow.dumpFlowBasedFeaturesEx();
             List<String> flowStringList = new ArrayList<>();
